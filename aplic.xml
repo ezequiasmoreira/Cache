@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Project name="aplic" LastModified="2019-01-22 01:04:12.181215">
+  <Items>
+    <ProjectItem name="geral.Usuario" type="CLS"></ProjectItem>
+    <ProjectItem name="csp/aplicacao/geral/cadastro.csp" type="CSP"></ProjectItem>
+    <ProjectItem name="geral.UsuarioResource" type="CLS"></ProjectItem>
+    <ProjectItem name="geral.UsuarioSpec" type="CLS"></ProjectItem>
+    <ProjectItem name="exception.UsuarioException" type="CLS"></ProjectItem>
+  </Items>
+  <BreakPoints>
+    <BreakPoint Routine="geral.Usuario.CLS" Offset="validarUsuario+1"></BreakPoint>
+    <BreakPoint Routine="geral.UsuarioResource.CLS" Offset="validarUsuario+1"></BreakPoint>
+  </BreakPoints>
+  <WatchVariables>
+    <WatchVariable Variable="json" Pane="1"></WatchVariable>
+  </WatchVariables>
+</Project>
+
+
+<CSP name="geral/cadastro.csp" application="/csp/aplicacao/" default="1"><![CDATA[
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+<form>
+<div class="form-group">
+    <label for="nome">nome</label>
+    <input type="nome" class="form-control" id="nome" aria-describedby="nome" placeholder="Seu nome">
+    
+  </div>
+  <div class="form-group">
+    <label for="exampleInputEmail1">Login</label>
+    <input type="email" class="form-control" id="login" aria-describedby="emailHelp" placeholder="Seu email">
+    
+  </div>
+  <div class="form-group">
+    <label for="senha">Senha</label>
+    <input type="password" class="form-control" id="senha" placeholder="Senha">
+  </div>
+  <button type="button" id="enviar" class="btn btn-primary">Enviar</button>
+  
+</form>
+
+<script language='javascript'>
+window.onload = function(){
+	iniciar();
+}
+function iniciar(){
+	$("#enviar").click(function(){
+		var json = obterDadosDoUsuario();
+		#server(geral.UsuarioResource.validarUsuario(JSON.stringify(json)))#;	
+		
+	});
+}
+function obterDadosDoUsuario(){
+	var nome = $("#nome").val();
+	var login = $("#login").val();
+	var senha = $("#senha").val();
+	
+	var obj = {
+		"nome":nome,
+		"login":login,
+		"senha":senha
+	}
+	return obj;
+}
+</script>]]></CSP>
+
+
+<Class name="exception.UsuarioException">
+<Super>%Exception.AbstractException</Super>
+<TimeCreated>65035,0.842085</TimeCreated>
+
+<Method name="exception">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>codigo</FormalSpec>
+<Implementation><![CDATA[
+	quit $CASE(codigo,
+              1:"O nome do usuário não pode ser nulo"
+              )
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="geral.Usuario">
+<Super>%Persistent</Super>
+<TimeCreated>65031,84375.597655</TimeCreated>
+
+<Property name="nome">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="login">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="senha">
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+
+<Method name="validarUsuario">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>json:%String</FormalSpec>
+<Implementation><![CDATA[
+	//set teste = ""
+  	set teste  = ##class(%DynamicAbstractObject).%FromJSON(json)
+	set teste.nome = "ezequias"
+	quit teste.%ToJSON()
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^geral.UsuarioD</DataLocation>
+<DefaultData>UsuarioDefaultData</DefaultData>
+<IdLocation>^geral.UsuarioD</IdLocation>
+<IndexLocation>^geral.UsuarioI</IndexLocation>
+<StreamLocation>^geral.UsuarioS</StreamLocation>
+<Data name="UsuarioDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>nome</Value>
+</Value>
+<Value name="3">
+<Value>login</Value>
+</Value>
+<Value name="4">
+<Value>senha</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="geral.UsuarioResource">
+<TimeCreated>65034,85595.365271</TimeCreated>
+
+<Method name="validarUsuario">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Json:%String</FormalSpec>
+<Implementation><![CDATA[
+	#dim exeption As %Exception.AbstractException
+	#dim retorno As %ArrayOfDataTypes = {}
+	try{
+		set objeto = ##class(%DynamicAbstractObject).%FromJSON(Json)
+		do ##class(UsuarioSpec).validar(objeto)
+		
+		set retorno."Code" = "200"
+	}catch exeption{
+		set retorno."code" = exeption.Code
+	}
+	quit retorno.%ToJSON()
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="geral.UsuarioSpec">
+<TimeCreated>65034,86224.161808</TimeCreated>
+
+<Method name="validar">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Json:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[	do ..validarNome(Json.nome)
+]]></Implementation>
+</Method>
+
+<Method name="validarNome">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>nome:%String</FormalSpec>
+<Implementation><![CDATA[
+	if (nome = ""){
+		throw ##class(exception.UsuarioException).exception(1)
+	}
+	quit $$$YES
+]]></Implementation>
+</Method>
+</Class>
+</Export>
