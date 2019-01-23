@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-<Project name="aplic" LastModified="2019-01-22 01:04:12.181215">
+<Project name="aplic" LastModified="2019-01-23 00:00:33.287644">
   <Items>
-    <ProjectItem name="geral.Usuario" type="CLS"></ProjectItem>
     <ProjectItem name="csp/aplicacao/geral/cadastro.csp" type="CSP"></ProjectItem>
+    <ProjectItem name="exception.Exception" type="CLS"></ProjectItem>
+    <ProjectItem name="exception.Mensagem" type="CLS"></ProjectItem>
+    <ProjectItem name="exception.UsuarioException" type="CLS"></ProjectItem>
+    <ProjectItem name="exception.UsuarioMensagem" type="CLS"></ProjectItem>
+    <ProjectItem name="geral.Usuario" type="CLS"></ProjectItem>
     <ProjectItem name="geral.UsuarioResource" type="CLS"></ProjectItem>
     <ProjectItem name="geral.UsuarioSpec" type="CLS"></ProjectItem>
-    <ProjectItem name="exception.UsuarioException" type="CLS"></ProjectItem>
   </Items>
   <BreakPoints>
     <BreakPoint Routine="geral.Usuario.CLS" Offset="validarUsuario+1"></BreakPoint>
     <BreakPoint Routine="geral.UsuarioResource.CLS" Offset="validarUsuario+1"></BreakPoint>
   </BreakPoints>
-  <WatchVariables>
-    <WatchVariable Variable="json" Pane="1"></WatchVariable>
-  </WatchVariables>
 </Project>
 
 
@@ -69,17 +69,81 @@ function obterDadosDoUsuario(){
 </script>]]></CSP>
 
 
-<Class name="exception.UsuarioException">
-<Super>%Exception.AbstractException</Super>
-<TimeCreated>65035,0.842085</TimeCreated>
+<Class name="exception.Exception">
+<Super>%Exception.General,exception.Mensagem</Super>
+<TimeCreated>65035,81972.426079</TimeCreated>
+
+<Method name="%OnNew">
+<FormalSpec>pName:%String="",pCode:%String="",pLocation:%String="",pData:%String="",pInnerException:%Exception.AbstractException=$$$NULLOREF</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if ((pCode '= "")&&(pName = "")){
+		set pName = ##class(exception.Mensagem).exception(pCode,pLocation)
+	}
+	Set pLocationerrorinfo=$$$envCallerErrorInfoGet
+	If $get(pLocation)="",pLocationerrorinfo {
+		Try {
+			For i=$zutil(41)-2:-1:1 Set pLocation=$piece($zutil(41,i),"^",2,3) Quit:pLocation'="^"&&(pLocation'["%Exception.General.")
+			If pLocation="^" Set pLocation=""
+		} Catch {
+			Set pLocation=""
+		}
+	}
+	If pLocationerrorinfo=2 {
+		Try {
+			For i=i-1:-1:1 {
+				Set info=$piece($zutil(41,i),"^",2,3)
+				If info'="^",info'="" Set pLocation=pLocation_" "_info
+			}
+			If $extract(pLocation,*)=" " Set pLocation=$extract(pLocation,1,*-1)
+		} Catch {
+		}
+	}
+
+	Set i%Name=pName,i%Code=pCode,i%Location=pLocation,i%Data=pData,i%InnerException=pInnerException
+	If pLocationerrorinfo=3 {
+		Do LOG^%ETN(..DisplayString())
+	}
+	Quit $$$OK
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="exception.Mensagem">
+<TimeCreated>65035,83058.95866</TimeCreated>
 
 <Method name="exception">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>codigo</FormalSpec>
+<FormalSpec>codigo,tabela</FormalSpec>
+<Implementation><![CDATA[
+	quit $case(tabela,
+         "usuario" :##class(UsuarioMensagem).obterMensagem(codigo)
+       )
+	
+	quit "Mensagem indefinida"
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="exception.UsuarioException">
+<Super>Exception</Super>
+<TimeCreated>65035,0.842085</TimeCreated>
+</Class>
+
+
+<Class name="exception.UsuarioMensagem">
+<TimeCreated>65035,85229.609777</TimeCreated>
+
+<Method name="obterMensagem">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>codigo:%Integer</FormalSpec>
 <Implementation><![CDATA[
 	quit $CASE(codigo,
-              1:"O nome do usuário não pode ser nulo"
-              )
+         1:"O nome do usuário não pode ser nulo"
+       )
 ]]></Implementation>
 </Method>
 </Class>
@@ -156,6 +220,7 @@ function obterDadosDoUsuario(){
 		set retorno."Code" = "200"
 	}catch exeption{
 		set retorno."code" = exeption.Code
+		set retorno."Name" = exeption.Name
 	}
 	quit retorno.%ToJSON()
 ]]></Implementation>
@@ -179,7 +244,7 @@ function obterDadosDoUsuario(){
 <FormalSpec>nome:%String</FormalSpec>
 <Implementation><![CDATA[
 	if (nome = ""){
-		throw ##class(exception.UsuarioException).exception(1)
+		throw ##class(exception.UsuarioException).%New(,1,"usuario") 
 	}
 	quit $$$YES
 ]]></Implementation>
